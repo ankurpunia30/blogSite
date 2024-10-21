@@ -7,6 +7,7 @@ const express=require('express');
 const createBlogPost=async(req,res)=>{
     try{
         const {title,content}=req.body;
+        // console.log(req.user);
         if(!(title && content)){
             return res.status(400).json({error:"All input is required"});
         }

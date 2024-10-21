@@ -1,33 +1,26 @@
-//middleware for authentication
-//check if the user is authenticated 
-//if not, redirect to login page
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const authenticate = (req, res, next) => {
-  
-    try{
-        const token=req.header('x-auth-token');
-        // console.log(token);
+    try {
+        // Get token from the header
+        const token = req.header("token");
         
-        if(!token){
-            return res.status(401).json({error:"No authentication token, authorization denied"});
+        if (!token) {
+            return res.status(401).json({ error: "No authentication token, authorization denied" });
         }
         
-        const verified=jwt.verify(token,process.env.TOKEN_KEY);
+        // Verify token
+        const verified = jwt.verify(token, process.env.TOKEN_KEY);
         
-        if(!verified){
-            return res.status(401).json({error:"Token verification failed, authorization denied"});
-        }
+        // Attach user ID to the request
+        req.user = verified.user_id;
         
-        req.user=verified.user_id;
-        
-        next();
-
-    }
-    catch(err){
+        next(); // Proceed to the next middleware or route handler
+    } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(401).json({ error: "Token verification failed, authorization denied" });
     }
-}
+};
+
 module.exports = { authenticate };
