@@ -23,26 +23,23 @@ const UserSchema = new Schema({
     }
 });
 
-// Hash password before saving user
-UserSchema.pre('save', function(next) {
-    const user = this;
+// // Hash password before saving user
+// UserSchema.pre('save', function(next) {
+//     const user = this;
 
-    // Generate salt and hash the password
-    bcrypt.genSalt(10, (err, salt) => {
-        if (err) return next(err);
-        bcrypt.hash(user.password, salt, (err, hash) => {
-            if (err) return next(err);
+//     // Generate salt and hash the password
+//     bcrypt.genSalt(10, (err, salt) => {
+//         if (err) return next(err);
+//         bcrypt.hash(user.password, salt, (err, hash) => {
+//             if (err) return next(err);
 
-            user.password = hash;
-            next();
-        });
-    });
-});
+//             user.password = hash;
+//             next();
+//         });
+//     });
+// });
 
-// Method to compare input password with hashed password
-UserSchema.methods.comparePassword = function(password) {
-    return bcrypt.compare(password, this.password);
-};
+
 
 // Create and export User model
 const User = mongoose.model('user', UserSchema);

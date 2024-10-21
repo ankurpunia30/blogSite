@@ -1,11 +1,5 @@
-//two major parts needed to be done in this file
-//1. create a new user
-//2. login a user
-//3. logout a user
-//1. create a new user
-// user registration logic
 const User = require('../models/User');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -13,64 +7,68 @@ require('dotenv').config();
 const userRegister = async (req, res) => {
     const { username, email, password } = req.body;
     try {
-        // validate user input
+        // Validate user input
         if (!(email && password && username)) {
-            res.status(400).json({ error: "All input is required" });
+            return res.status(400).json({ error: "All input is required" });
         }
-        // what if user already exists
-        const user = await User.findOne({ email: email });
+
+        // Check if user already exists
+        const user = await User.findOne({ email });
         if (user) {
             return res.status(422).json({ error: "User already exists with this email" });
         }
-        // generate new password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        // create new user
+
+        // Create new user without hashing password
         const newUser = new User({
             name: username,
             email: email,
-            password: hashedPassword
+            password: password // Store plain text password
         });
-        // generate token
+
+        // Generate token
         const token = jwt.sign({ user_id: newUser._id, email }, process.env.TOKEN_KEY, { expiresIn: "2h" });
         newUser.token = token;
-        
-        // save user and respond
+
+        // Save user and respond
         const newUserCreated = await newUser.save();
         res.status(200).json(newUserCreated);
 
-    }   
-    catch (err) {
-        res.status(500).json(err);
+    } catch (err) {
+        res.status(500).json({ error: "Internal server error" });
     }
 }
+
 
 // user login logic below
 const userLogin = async (req, res) => {
     const { email, password } = req.body;
     try {
-        // validate user input
+        // Validate user input
         if (!(email && password)) {
-            res.status(400).json({ error: "All input is required" });
+            return res.status(400).json({ error: "All input is required" });
         }
-        // check if user exists
-        const user = await User.findOne({ email: email });
-        // check for hashed password
-        if (user && (await bcrypt.compare(password, user.password))) {
-            // create token
+
+        // Check if user exists
+        const user = await User.findOne({ email });
+
+        // Check for plain text password
+        if (user && user.password === password) { // Directly compare the passwords
+            // Create token
             const token = jwt.sign({ user_id: user._id, email }, process.env.TOKEN_KEY, { expiresIn: "2h" });
+            console.log(token);
             user.token = token;
-            // respond with user
-            res.status(200).json({ message: "Login successful" }, user);
+
+            // Respond with user
+            return res.status(200).json({ message: "Login successful", user });
         } else {
-            res.status(400);
-            throw new Error("Invalid credentials");
+            return res.status(400).json({ error: "Invalid credentials" });
         }
-    }
-    catch (err) {
-        res.status(500).json(err);
+
+    } catch (err) {
+        res.status(500).json({ error: "Internal server error" });
     }
 }
 
+
 // Exporting the controller functions
-module.exports={userLogin,userRegister};
+module.exports = { userLogin, userRegister };
